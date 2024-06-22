@@ -72,7 +72,7 @@
             backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
         }
 
-        const MAX_ENEMIES = 20;
+        const MAX_ENEMIES = 40;
         const ENEMY_SPEED = 2;
         const ENEMY_ACCELERATION = 0.05;
         const SAFE_SPAWN_DISTANCE = 150;
@@ -137,7 +137,7 @@
                 canSplit: canSplit,
                 color: isBoss ? 'black' : (canSplit ? 'red' : 'purple'),
                 isBoss: isBoss,
-                health: isBoss ? 30 : 1
+                health: isBoss ? 20 : 1
             };
         }
 
@@ -283,15 +283,15 @@
                             if (enemy.health <= 0) {
                                 createExplosion(enemy.x, enemy.y, false, true);
                                 enemies.splice(enemyIndex, 1);
-                                score += 100;
-                                for (let i = 0; i < 120; i++) {
+                                score += 500;
+                                for (let i = 0; i < 15; i++) {
                                     const angle = (i / 10) * Math.PI * 2;
                                     const newEnemy = createEnemy(
-                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*50,
-                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*50,
+                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*75,
+                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*75,
                                         5,
-                                        ENEMY_SPEED * 7,
-                                        true
+                                        ENEMY_SPEED * 0.75,
+                                        false
                                     );
                                     if (newEnemy) {
                                         newEnemy.color = 'cyan';
@@ -334,7 +334,8 @@
         }
 
         function updateSpawnInterval() {
-            spawnInterval = Math.max(100, 1000 * Math.exp(-score / 50));
+            // Adjust the formula to control the rate increase more subtly
+            spawnInterval = Math.max(150, 2000 * Math.exp(-score / 1500));
             clearInterval(enemySpawnTimer);
             enemySpawnTimer = setInterval(() => {
                 if (!gameOver) {
