@@ -52,10 +52,10 @@
                 radius: 15,
                 angle: 0,
                 thrust: 0,
-                rotationSpeed: 0.1,
+                rotationSpeed: 0.095,
                 velocity: { x: 0, y: 0 },
                 acceleration: 0.1,
-                friction: 0.99
+                friction: 0.975
             };
 
             bullets = [];
@@ -72,10 +72,10 @@
             backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
         }
 
-        const MAX_ENEMIES = 40;
+        const MAX_ENEMIES = 80;
         const ENEMY_SPEED = 2;
         const ENEMY_ACCELERATION = 0.05;
-        const SAFE_SPAWN_DISTANCE = 150;
+        const SAFE_SPAWN_DISTANCE = 100;
         const MAX_SPAWN_ATTEMPTS = 50;
 
         let screenShake = 0;
@@ -137,7 +137,7 @@
                 canSplit: canSplit,
                 color: isBoss ? 'black' : (canSplit ? 'red' : 'purple'),
                 isBoss: isBoss,
-                health: isBoss ? 20 : 1
+                health: isBoss ? 10 : 1
             };
         }
 
@@ -283,14 +283,14 @@
                             if (enemy.health <= 0) {
                                 createExplosion(enemy.x, enemy.y, false, true);
                                 enemies.splice(enemyIndex, 1);
-                                score += 500;
-                                for (let i = 0; i < 15; i++) {
+                                score += 1000;
+                                for (let i = 0; i < 20; i++) {
                                     const angle = (i / 10) * Math.PI * 2;
                                     const newEnemy = createEnemy(
-                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*75,
-                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*75,
+                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*50,
+                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*50,
                                         5,
-                                        ENEMY_SPEED * 0.75,
+                                        ENEMY_SPEED * 0.60,
                                         false
                                     );
                                     if (newEnemy) {
@@ -308,9 +308,9 @@
                                 if (smallEnemy1) enemies.push(smallEnemy1);
                                 if (smallEnemy2) enemies.push(smallEnemy2);
                                 // if (smallEnemy3) enemies.push(smallEnemy3);
-                                score += 1;
+                                score += 5;
                             } else {
-                                score += 2;
+                                score += 20;
                             }
                             enemies.splice(enemyIndex, 1);
                         }
@@ -335,7 +335,7 @@
 
         function updateSpawnInterval() {
             // Adjust the formula to control the rate increase more subtly
-            spawnInterval = Math.max(150, 2000 * Math.exp(-score / 1500));
+            spawnInterval = Math.max(150, 2000 * Math.exp(-score / 3000));
             clearInterval(enemySpawnTimer);
             enemySpawnTimer = setInterval(() => {
                 if (!gameOver) {
