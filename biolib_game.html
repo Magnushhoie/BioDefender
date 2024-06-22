@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioDefender: Boss Edition</title>
+    <style>
+        canvas {
+            border: 1px solid #000;
+            display: block;
+            margin: 0 auto;
+        }
+        #deathMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="deathMessage">You are dead. Try again? Press Enter to restart.</div>
+    <audio id="backgroundMusic" loop>
+        <source src="background.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="explosionSound">
+        <source src="explosion.mp3" type="audio/mpeg">
+    </audio>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const deathMessage = document.getElementById('deathMessage');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const explosionSound = document.getElementById('explosionSound');
+
+        const backgroundImage = new Image();
+        backgroundImage.src = 'bg.png';
+
+        let player, bullets, enemies, explosions, particles, keys, score, gameOver, spawnInterval, bossSpawnTimer;
+
+        function initGame() {
+            player = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                radius: 15,
+                angle: 0,
+                thrust: 0,
+                rotationSpeed: 0.1,
+                velocity: { x: 0, y: 0 },
+                acceleration: 0.1,
+                friction: 0.99
+            };
+
+            bullets = [];
+            enemies = [];
+            explosions = [];
+            particles = [];
+            keys = {};
+            score = 0;
+            gameOver = false;
+            spawnInterval = 1000;
+            bossSpawnTimer = 0;
+
+            deathMessage.style.display = 'none';
+            backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+        }
+
+        const MAX_ENEMIES = 30;
+        const ENEMY_SPEED = 2;
+        const ENEMY_ACCELERATION = 0.05;
+        const SAFE_SPAWN_DISTANCE = 150;
+        const MAX_SPAWN_ATTEMPTS = 50;
+
+        let screenShake = 0;
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+            ctx.beginPath();
+            ctx.moveTo(player.radius, 0);
+            ctx.lineTo(-player.radius, -player.radius / 2);
+            ctx.lineTo(-player.radius, player.radius / 2);
+            ctx.closePath();
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function updatePlayer() {
+            if (keys.ArrowUp) player.thrust = player.acceleration;
+            else player.thrust = 0;
+
+            if (keys.ArrowLeft) player.angle -= player.rotationSpeed;
+            if (keys.ArrowRight) player.angle += player.rotationSpeed;
+
+            player.velocity.x += Math.cos(player.angle) * player.thrust;
+            player.velocity.y += Math.sin(player.angle) * player.thrust;
+
+            player.velocity.x *= player.friction;
+            player.velocity.y *= player.friction;
+
+            player.x += player.velocity.x;
+            player.y += player.velocity.y;
+
+            if (player.x > canvas.width) player.x = 0;
+            if (player.x < 0) player.x = canvas.width;
+            if (player.y > canvas.height) player.y = 0;
+            if (player.y < 0) player.y = canvas.height;
+        }
+
+        function createEnemy(x, y, radius, speed, canSplit = true, isBoss = false) {
+            if (enemies.length >= MAX_ENEMIES && !isBoss) return null;
+
+            let enemyX, enemyY;
+            let attempts = 0;
+            do {
+                enemyX = x || Math.random() * canvas.width;
+                enemyY = y || Math.random() * canvas.height;
+                attempts++;
+                if (attempts > MAX_SPAWN_ATTEMPTS) return null;
+            } while (distanceBetween(enemyX, enemyY, player.x, player.y) < SAFE_SPAWN_DISTANCE);
+
+            return {
+                x: enemyX,
+                y: enemyY,
+                radius: radius || (isBoss ? 40 : 20),
+                velocity: { x: 0, y: 0 },
+                speed: speed || (isBoss ? ENEMY_SPEED * 0.5 : ENEMY_SPEED),
+                canSplit: canSplit,
+                color: isBoss ? 'black' : (canSplit ? 'red' : 'purple'),
+                isBoss: isBoss,
+                health: isBoss ? 30 : 1
+            };
+        }
+
+        function distanceBetween(x1, y1, x2, y2) {
+            return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        }
+
+        function updateAndDrawEnemies() {
+            enemies.forEach(enemy => {
+                let dx = player.x - enemy.x;
+                let dy = player.y - enemy.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                dx /= distance;
+                dy /= distance;
+
+                enemy.velocity.x += dx * ENEMY_ACCELERATION;
+                enemy.velocity.y += dy * ENEMY_ACCELERATION;
+
+                let speed = Math.sqrt(enemy.velocity.x * enemy.velocity.x + enemy.velocity.y * enemy.velocity.y);
+                if (speed > enemy.speed) {
+                    enemy.velocity.x = (enemy.velocity.x / speed) * enemy.speed;
+                    enemy.velocity.y = (enemy.velocity.y / speed) * enemy.speed;
+                }
+
+                enemy.x += enemy.velocity.x;
+                enemy.y += enemy.velocity.y;
+
+                if (enemy.x > canvas.width) enemy.x = 0;
+                if (enemy.x < 0) enemy.x = canvas.width;
+                if (enemy.y > canvas.height) enemy.y = 0;
+                if (enemy.y < 0) enemy.y = canvas.height;
+
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+                ctx.fillStyle = enemy.color;
+                ctx.fill();
+
+                if (enemy.isBoss) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(enemy.health, enemy.x, enemy.y + 5);
+                }
+            });
+        }
+
+        function createExplosion(x, y, isSmall = false, isBoss = false) {
+            const baseRadius = isSmall ? 30 : (isBoss ? 60 : 40);
+            const particleCount = isSmall ? 30 : (isBoss ? 100 : 50);
+            const color = isSmall ? 'purple' : (isBoss ? 'black' : 'orange');
+
+            explosions.push({
+                x: x,
+                y: y,
+                radius: 1,
+                maxRadius: baseRadius,
+                growthRate: 2,
+                alpha: 0.7,
+                color: color
+            });
+
+            explosions.push({
+                x: x,
+                y: y,
+                radius: 1,
+                maxRadius: baseRadius * 1.5,
+                growthRate: 3,
+                alpha: 0.3,
+                color: 'white'
+            });
+
+            for (let i = 0; i < particleCount; i++) {
+                let speed = 1 + Math.random() * 3;
+                let angle = Math.random() * Math.PI * 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    radius: 0.5 + Math.random() * 2,
+                    velocity: {
+                        x: Math.cos(angle) * speed,
+                        y: Math.sin(angle) * speed
+                    },
+                    color: color,
+                    alpha: 1,
+                    decay: 0.01 + Math.random() * 0.02
+                });
+            }
+
+            playExplosionSound();
+
+            screenShake = isBoss ? 15 : (isSmall ? 5 : 8);
+        }
+
+        function playExplosionSound() {
+            const newExplosionSound = new Audio('explosion.mp3');
+            newExplosionSound.play().catch(e => console.log("Audio play failed:", e));
+        }
+
+        function updateAndDrawExplosions() {
+            explosions.forEach((explosion, index) => {
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `${explosion.color}${Math.floor(explosion.alpha * 255).toString(16).padStart(2, '0')}`;
+                ctx.fill();
+
+                explosion.radius += explosion.growthRate;
+                explosion.alpha -= 0.02;
+
+                if (explosion.alpha <= 0 || explosion.radius >= explosion.maxRadius) {
+                    explosions.splice(index, 1);
+                }
+            });
+
+            particles.forEach((particle, index) => {
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `${particle.color}${Math.floor(particle.alpha * 255).toString(16).padStart(2, '0')}`;
+                ctx.fill();
+
+                particle.x += particle.velocity.x;
+                particle.y += particle.velocity.y;
+                particle.alpha -= particle.decay;
+
+                if (particle.alpha <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+        }
+
+        function checkCollisions() {
+            bullets.forEach((bullet, bulletIndex) => {
+                enemies.forEach((enemy, enemyIndex) => {
+                    const dx = bullet.x - enemy.x;
+                    const dy = bullet.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < enemy.radius) {
+                        bullets.splice(bulletIndex, 1);
+
+                        if (enemy.isBoss) {
+                            enemy.health--;
+                            if (enemy.health <= 0) {
+                                createExplosion(enemy.x, enemy.y, false, true);
+                                enemies.splice(enemyIndex, 1);
+                                score += 10;
+                                for (let i = 0; i < 10; i++) {
+                                    const angle = (i / 10) * Math.PI * 2;
+                                    const newEnemy = createEnemy(
+                                        enemy.x + Math.cos(angle) * 50,
+                                        enemy.y + Math.sin(angle) * 50,
+                                        15,
+                                        ENEMY_SPEED * 2,
+                                        false
+                                    );
+                                    if (newEnemy) {
+                                        newEnemy.color = 'black';
+                                        enemies.push(newEnemy);
+                                    }
+                                }
+                            }
+                        } else {
+                            createExplosion(enemy.x, enemy.y, !enemy.canSplit);
+                            if (enemy.canSplit) {
+                                const smallEnemy1 = createEnemy(enemy.x, enemy.y, enemy.radius / 2, enemy.speed * 1.5, false);
+                                const smallEnemy2 = createEnemy(enemy.x, enemy.y, enemy.radius / 2, enemy.speed * 1.5, false);
+                                if (smallEnemy1) enemies.push(smallEnemy1);
+                                if (smallEnemy2) enemies.push(smallEnemy2);
+                                score += 1;
+                            } else {
+                                score += 2;
+                            }
+                            enemies.splice(enemyIndex, 1);
+                        }
+                        updateSpawnInterval();
+                    }
+                });
+            });
+
+            enemies.forEach(enemy => {
+                const dx = player.x - enemy.x;
+                const dy = player.y - enemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < player.radius + enemy.radius) {
+                    gameOver = true;
+                    deathMessage.style.display = 'block';
+                    backgroundMusic.pause();
+                    backgroundMusic.currentTime = 0;
+                }
+            });
+        }
+
+        function updateSpawnInterval() {
+            spawnInterval = Math.max(100, 1000 * Math.exp(-score / 50));
+            clearInterval(enemySpawnTimer);
+            enemySpawnTimer = setInterval(() => {
+                if (!gameOver) {
+                    const enemy = createEnemy();
+                    if (enemy) enemies.push(enemy);
+                }
+            }, spawnInterval);
+        }
+
+        function shoot() {
+            bullets.push({
+                x: player.x + Math.cos(player.angle) * player.radius,
+                y: player.y + Math.sin(player.angle) * player.radius,
+                velocity: {
+                    x: Math.cos(player.angle) * 5 + player.velocity.x,
+                    y: Math.sin(player.angle) * 5 + player.velocity.y
+                }
+            });
+        }
+
+        function applyScreenShake() {
+            if (screenShake > 0) {
+                const shakeX = (Math.random() - 0.5) * screenShake;
+                const shakeY = (Math.random() - 0.5) * screenShake;
+                ctx.translate(shakeX, shakeY);
+                screenShake *= 0.9;
+            }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'white';
+            ctx.font = '28px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Score: ${score}`, canvas.width / 2, 40);
+        }
+
+        function gameLoop() {
+            if (gameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            applyScreenShake();
+
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+            updatePlayer();
+            drawPlayer();
+
+            ctx.fillStyle = 'yellow';
+            bullets.forEach((bullet, index) => {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                bullet.x += bullet.velocity.x;
+                bullet.y += bullet.velocity.y;
+
+                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+                                bullets.splice(index, 1);
+                            }
+                        });
+
+                        updateAndDrawEnemies();
+                        updateAndDrawExplosions();
+                        checkCollisions();
+                        drawScore();
+
+                        ctx.restore();
+
+                        if (keys.Space) {
+                            shoot();
+                        }
+
+                        bossSpawnTimer++;
+                        if (bossSpawnTimer >= 1000) {  // Spawn a boss every 1000 frames (adjust as needed)
+                            const boss = createEnemy(null, null, null, null, false, true);
+                            if (boss) enemies.push(boss);
+                            bossSpawnTimer = 0;
+                        }
+
+                        requestAnimationFrame(gameLoop);
+                    }
+
+                    document.addEventListener('keydown', (e) => {
+                        keys[e.code] = true;
+                        if (e.code === 'Enter' && gameOver) {
+                            initGame();
+                            updateSpawnInterval();
+                            gameLoop();
+                        }
+                    });
+
+                    document.addEventListener('keyup', (e) => {
+                        keys[e.code] = false;
+                    });
+
+                    let enemySpawnTimer;
+
+                    backgroundImage.onload = function() {
+                        initGame();
+                        for (let i = 0; i < 5; i++) {
+                            const enemy = createEnemy();
+                            if (enemy) enemies.push(enemy);
+                        }
+                        updateSpawnInterval();
+                        gameLoop();
+                    };
+
+                    // Add a click event listener to start audio (to handle autoplay restrictions)
+                    document.addEventListener('click', () => {
+                        if (backgroundMusic.paused) {
+                            backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                        }
+                    });
+                </script>
