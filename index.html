@@ -329,7 +329,7 @@
                 const dy = player.y - enemy.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
-                if (distance < player.radius + enemy.radius) {
+                if (distance < player.radius/2 + enemy.radius) {
                     gameOver = true;
                     deathMessage.style.display = 'block';
                     backgroundMusic.pause();
@@ -458,3 +458,4 @@
                 </script>
 
     <h3>Move with arrow keys, shoot with space</h3>
+    <h3>Written with <a href="https://www.anthropic.com/news/claude-3-5-sonnet">Claude 3.5 Sonnet</a> and <a href="https://suno.com/song/39da37ec-ca93-4c7a-85ed-7a49ef28089d">Suno.ai</a></h3>
