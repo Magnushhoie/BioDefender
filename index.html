@@ -66,16 +66,16 @@
             score = 0;
             gameOver = false;
             spawnInterval = 1000;
-            bossSpawnTimer = 300;
+            bossSpawnTimer = 0;
 
             deathMessage.style.display = 'none';
             backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
         }
 
-        const MAX_ENEMIES = 80;
+        const MAX_ENEMIES = 30;
         const ENEMY_SPEED = 2;
         const ENEMY_ACCELERATION = 0.05;
-        const SAFE_SPAWN_DISTANCE = 100;
+        const SAFE_SPAWN_DISTANCE = 150;
         const MAX_SPAWN_ATTEMPTS = 50;
 
         let screenShake = 0;
@@ -131,13 +131,13 @@
             return {
                 x: enemyX,
                 y: enemyY,
-                radius: radius || (isBoss ? 50 : 15),
+                radius: radius || (isBoss ? 40 : 20),
                 velocity: { x: 0, y: 0 },
                 speed: speed || (isBoss ? ENEMY_SPEED * 0.5 : ENEMY_SPEED),
                 canSplit: canSplit,
                 color: isBoss ? 'black' : (canSplit ? 'red' : 'purple'),
                 isBoss: isBoss,
-                health: isBoss ? 5 : 1
+                health: isBoss ? 30 : 1
             };
         }
 
@@ -187,7 +187,7 @@
 
         function createExplosion(x, y, isSmall = false, isBoss = false) {
             const baseRadius = isSmall ? 30 : (isBoss ? 60 : 40);
-            const particleCount = isSmall ? 30 : (isBoss ? 200 : 50);
+            const particleCount = isSmall ? 30 : (isBoss ? 100 : 50);
             const color = isSmall ? 'purple' : (isBoss ? 'black' : 'orange');
 
             explosions.push({
@@ -195,7 +195,7 @@
                 y: y,
                 radius: 1,
                 maxRadius: baseRadius,
-                growthRate: 4,
+                growthRate: 2,
                 alpha: 0.7,
                 color: color
             });
@@ -206,7 +206,7 @@
                 radius: 1,
                 maxRadius: baseRadius * 1.5,
                 growthRate: 3,
-                alpha: 0.5,
+                alpha: 0.3,
                 color: 'white'
             });
 
@@ -216,20 +216,20 @@
                 particles.push({
                     x: x,
                     y: y,
-                    radius: 0.5 + Math.random() * 4,
+                    radius: 0.5 + Math.random() * 2,
                     velocity: {
                         x: Math.cos(angle) * speed,
                         y: Math.sin(angle) * speed
                     },
                     color: color,
-                    alpha: 0.5,
+                    alpha: 1,
                     decay: 0.01 + Math.random() * 0.02
                 });
             }
 
             playExplosionSound();
 
-            screenShake = isBoss ? 100 : (isSmall ? 5 : 8);
+            screenShake = isBoss ? 15 : (isSmall ? 5 : 8);
         }
 
         function playExplosionSound() {
@@ -241,13 +241,13 @@
             explosions.forEach((explosion, index) => {
                 ctx.beginPath();
                 ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 100, 0, ${explosion.alpha})`;
+                ctx.fillStyle = `${explosion.color}${Math.floor(explosion.alpha * 255).toString(16).padStart(2, '0')}`;
                 ctx.fill();
 
                 explosion.radius += explosion.growthRate;
                 explosion.alpha -= 0.02;
 
-                if (explosion.alpha <= 0) {
+                if (explosion.alpha <= 0 || explosion.radius >= explosion.maxRadius) {
                     explosions.splice(index, 1);
                 }
             });
@@ -283,18 +283,18 @@
                             if (enemy.health <= 0) {
                                 createExplosion(enemy.x, enemy.y, false, true);
                                 enemies.splice(enemyIndex, 1);
-                                score += 1000;
-                                for (let i = 0; i < 15; i++) {
+                                score += 10;
+                                for (let i = 0; i < 10; i++) {
                                     const angle = (i / 10) * Math.PI * 2;
                                     const newEnemy = createEnemy(
-                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*10,
-                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*10,
-                                        5,
-                                        ENEMY_SPEED * 0.60,
+                                        enemy.x + Math.cos(angle) * 50,
+                                        enemy.y + Math.sin(angle) * 50,
+                                        15,
+                                        ENEMY_SPEED * 2,
                                         false
                                     );
                                     if (newEnemy) {
-                                        newEnemy.color = 'cyan';
+                                        newEnemy.color = 'black';
                                         enemies.push(newEnemy);
                                     }
                                 }
@@ -302,15 +302,13 @@
                         } else {
                             createExplosion(enemy.x, enemy.y, !enemy.canSplit);
                             if (enemy.canSplit) {
-                                const smallEnemy1 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 1.5, enemy.speed * 1.50, false);
-                                const smallEnemy2 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 1.5, enemy.speed * 1.50, false);
-                                // const smallEnemy3 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 2, enemy.speed * 1.5, false);
+                                const smallEnemy1 = createEnemy(enemy.x, enemy.y, enemy.radius / 2, enemy.speed * 1.5, false);
+                                const smallEnemy2 = createEnemy(enemy.x, enemy.y, enemy.radius / 2, enemy.speed * 1.5, false);
                                 if (smallEnemy1) enemies.push(smallEnemy1);
                                 if (smallEnemy2) enemies.push(smallEnemy2);
-                                // if (smallEnemy3) enemies.push(smallEnemy3);
-                                score += 5;
+                                score += 1;
                             } else {
-                                score += 20;
+                                score += 2;
                             }
                             enemies.splice(enemyIndex, 1);
                         }
@@ -334,8 +332,7 @@
         }
 
         function updateSpawnInterval() {
-            // Adjust the formula to control the rate increase more subtly
-            spawnInterval = Math.max(150, 2000 * Math.exp(-score / 3000));
+            spawnInterval = Math.max(100, 1000 * Math.exp(-score / 50));
             clearInterval(enemySpawnTimer);
             enemySpawnTimer = setInterval(() => {
                 if (!gameOver) {
@@ -411,7 +408,7 @@
                         }
 
                         bossSpawnTimer++;
-                        if (bossSpawnTimer >= 600) {  // Spawn a boss every 1000 frames (adjust as needed)
+                        if (bossSpawnTimer >= 1000) {  // Spawn a boss every 1000 frames (adjust as needed)
                             const boss = createEnemy(null, null, null, null, false, true);
                             if (boss) enemies.push(boss);
                             bossSpawnTimer = 0;
