@@ -66,13 +66,13 @@
             score = 0;
             gameOver = false;
             spawnInterval = 1000;
-            bossSpawnTimer = 0;
+            bossSpawnTimer = 300;
 
             deathMessage.style.display = 'none';
             backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
         }
 
-        const MAX_ENEMIES = 30;
+        const MAX_ENEMIES = 20;
         const ENEMY_SPEED = 2;
         const ENEMY_ACCELERATION = 0.05;
         const SAFE_SPAWN_DISTANCE = 150;
@@ -283,15 +283,15 @@
                             if (enemy.health <= 0) {
                                 createExplosion(enemy.x, enemy.y, false, true);
                                 enemies.splice(enemyIndex, 1);
-                                score += 10;
-                                for (let i = 0; i < 60; i++) {
+                                score += 100;
+                                for (let i = 0; i < 120; i++) {
                                     const angle = (i / 10) * Math.PI * 2;
                                     const newEnemy = createEnemy(
-                                        enemy.x + Math.cos(angle) * 50,
-                                        enemy.y + Math.sin(angle) * 50,
+                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*50,
+                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*50,
                                         5,
                                         ENEMY_SPEED * 7,
-                                        false
+                                        true
                                     );
                                     if (newEnemy) {
                                         newEnemy.color = 'cyan';
@@ -302,10 +302,12 @@
                         } else {
                             createExplosion(enemy.x, enemy.y, !enemy.canSplit);
                             if (enemy.canSplit) {
-                                const smallEnemy1 = createEnemy(enemy.x+Math.random(), enemy.y+Math.random(), enemy.radius / 2, enemy.speed * 1.5, false);
-                                const smallEnemy2 = createEnemy(enemy.x+Math.random(), enemy.y+Math.random(), enemy.radius / 2, enemy.speed * 1.5, false);
+                                const smallEnemy1 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 2, enemy.speed * 1.5, false);
+                                const smallEnemy2 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 2, enemy.speed * 1.5, false);
+                                // const smallEnemy3 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 2, enemy.speed * 1.5, false);
                                 if (smallEnemy1) enemies.push(smallEnemy1);
                                 if (smallEnemy2) enemies.push(smallEnemy2);
+                                // if (smallEnemy3) enemies.push(smallEnemy3);
                                 score += 1;
                             } else {
                                 score += 2;
@@ -370,7 +372,7 @@
         }
 
         function gameLoop() {
-            // if (gameOver) return;
+            if (gameOver) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
