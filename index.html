@@ -52,10 +52,10 @@
                 radius: 15,
                 angle: 0,
                 thrust: 0,
-                rotationSpeed: 0.095,
+                rotationSpeed: 0.1,
                 velocity: { x: 0, y: 0 },
                 acceleration: 0.1,
-                friction: 0.975
+                friction: 0.99
             };
 
             bullets = [];
@@ -131,13 +131,13 @@
             return {
                 x: enemyX,
                 y: enemyY,
-                radius: radius || (isBoss ? 40 : 20),
+                radius: radius || (isBoss ? 50 : 15),
                 velocity: { x: 0, y: 0 },
                 speed: speed || (isBoss ? ENEMY_SPEED * 0.5 : ENEMY_SPEED),
                 canSplit: canSplit,
                 color: isBoss ? 'black' : (canSplit ? 'red' : 'purple'),
                 isBoss: isBoss,
-                health: isBoss ? 10 : 1
+                health: isBoss ? 5 : 1
             };
         }
 
@@ -284,11 +284,11 @@
                                 createExplosion(enemy.x, enemy.y, false, true);
                                 enemies.splice(enemyIndex, 1);
                                 score += 1000;
-                                for (let i = 0; i < 20; i++) {
+                                for (let i = 0; i < 15; i++) {
                                     const angle = (i / 10) * Math.PI * 2;
                                     const newEnemy = createEnemy(
-                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*50,
-                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*50,
+                                        (enemy.x + Math.cos(angle) * 50) + Math.random()*10,
+                                        (enemy.y + Math.sin(angle) * 50) + Math.random()*10,
                                         5,
                                         ENEMY_SPEED * 0.60,
                                         false
@@ -302,8 +302,8 @@
                         } else {
                             createExplosion(enemy.x, enemy.y, !enemy.canSplit);
                             if (enemy.canSplit) {
-                                const smallEnemy1 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 2, enemy.speed * 1.5, false);
-                                const smallEnemy2 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 2, enemy.speed * 1.5, false);
+                                const smallEnemy1 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 1.5, enemy.speed * 1.50, false);
+                                const smallEnemy2 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 1.5, enemy.speed * 1.50, false);
                                 // const smallEnemy3 = createEnemy(enemy.x+ (Math.random()*50), enemy.y+ (Math.random()*50), enemy.radius / 2, enemy.speed * 1.5, false);
                                 if (smallEnemy1) enemies.push(smallEnemy1);
                                 if (smallEnemy2) enemies.push(smallEnemy2);
@@ -411,7 +411,7 @@
                         }
 
                         bossSpawnTimer++;
-                        if (bossSpawnTimer >= 700) {  // Spawn a boss every 1000 frames (adjust as needed)
+                        if (bossSpawnTimer >= 600) {  // Spawn a boss every 1000 frames (adjust as needed)
                             const boss = createEnemy(null, null, null, null, false, true);
                             if (boss) enemies.push(boss);
                             bossSpawnTimer = 0;
