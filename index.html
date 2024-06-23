@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<body style="background-color:black;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,6 +87,21 @@
         const MAX_SPAWN_ATTEMPTS = 50;
 
         let screenShake = 0;
+
+        // Add these variables at the top of your script, after other declarations
+        const numLayers = 3;
+        const layers = [];
+
+        // Load background layers
+        for (let i = 0; i < numLayers; i++) {
+            const layer = new Image();
+            layer.src = `bg_layer_${i + 1}.png`;  // Ensure you have these images
+            layers.push({
+                image: layer,
+                x: 0,
+                speed: (i + 1) * 0.5  // Adjust speed as needed
+            });
+        }
 
         function drawPlayer() {
             ctx.save();
@@ -376,6 +392,23 @@
             ctx.fillText(`Score: ${score}`, canvas.width / 2, 40);
         }
 
+        // Add this new function to draw the parallax background
+        function drawParallaxBackground() {
+            layers.forEach(layer => {
+                // Draw each layer twice to create a seamless scroll
+                ctx.drawImage(layer.image, layer.x, 0, canvas.width, canvas.height);
+                ctx.drawImage(layer.image, layer.x + canvas.width, 0, canvas.width, canvas.height);
+
+                // Move the layer
+                layer.x -= layer.speed;
+
+                // Reset the layer position if it's moved completely off-screen
+                if (layer.x <= -canvas.width) {
+                    layer.x = 0;
+                }
+            });
+        }
+
         function gameLoop() {
             if (gameOver) return;
 
@@ -384,7 +417,10 @@
             ctx.save();
             applyScreenShake();
 
-            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            // Draw parallax background
+            drawParallaxBackground();
+
+            // ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
 
             updatePlayer();
             drawPlayer();
@@ -457,5 +493,5 @@
                     });
                 </script>
 
-    <h3>Move with arrow keys, shoot with space</h3>
-    <h3>Written with <a href="https://www.anthropic.com/news/claude-3-5-sonnet">Claude 3.5 Sonnet</a> and <a href="https://suno.com/song/39da37ec-ca93-4c7a-85ed-7a49ef28089d">Suno.ai</a></h3>
+                <p style="background-color:black;color:white;">Move with arrow keys, shoot with space</p>
+                <p style="background-color:black;color:white;">Written with <a href="https://www.anthropic.com/news/claude-3-5-sonnet">Claude 3.5 Sonnet</a> and <a href="https://suno.com/song/39da37ec-ca93-4c7a-85ed-7a49ef28089d">Suno.ai</a></p>
