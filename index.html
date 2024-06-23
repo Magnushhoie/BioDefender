@@ -74,7 +74,7 @@
             score = 0;
             gameOver = false;
             spawnInterval = 1000;
-            bossSpawnTimer = 0;
+            bossSpawnTimer = 900;
 
             deathMessage.style.display = 'none';
             backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
@@ -158,7 +158,8 @@
                 velocity: { x: 0, y: 0 },
                 speed: speed || (isBoss ? ENEMY_SPEED * 0.5 : ENEMY_SPEED),
                 canSplit: canSplit,
-                color: isBoss ? 'black' : (canSplit ? 'red' : 'purple'),
+                // colors
+                color: isBoss ? 'Black' : (canSplit ? 'Red' : 'Black'),
                 isBoss: isBoss,
                 health: isBoss ? 15 : 1
             };
@@ -211,7 +212,8 @@
         function createExplosion(x, y, isSmall = false, isBoss = false) {
             const baseRadius = isSmall ? 30 : (isBoss ? 60 : 40);
             const particleCount = isSmall ? 30 : (isBoss ? 100 : 50);
-            const color = isSmall ? 'purple' : (isBoss ? 'black' : 'orange');
+            // colors
+            const color = isSmall ? 'Yellow' : (isBoss ? 'Purple' : 'orange');
 
             explosions.push({
                 x: x,
@@ -316,8 +318,9 @@
                                         ENEMY_SPEED * 1.5,
                                         false
                                     );
+                                    // color
                                     if (newEnemy) {
-                                        newEnemy.color = 'cyan';
+                                        newEnemy.color = '#FAF0E6';
                                         enemies.push(newEnemy);
                                     }
                                 }
@@ -425,7 +428,8 @@
             updatePlayer();
             drawPlayer();
 
-            ctx.fillStyle = 'yellow';
+            // color shots
+            ctx.fillStyle = 'Yellow';
             bullets.forEach((bullet, index) => {
                 ctx.beginPath();
                 ctx.arc(bullet.x, bullet.y, 2, 0, Math.PI * 2);
