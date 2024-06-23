@@ -62,8 +62,8 @@
                 thrust: 0,
                 rotationSpeed: 0.1,
                 velocity: { x: 0, y: 0 },
-                acceleration: 0.1,
-                friction: 0.99
+                acceleration: 0.15,
+                friction: 0.99,
             };
 
             bullets = [];
@@ -80,7 +80,7 @@
             backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
         }
 
-        const MAX_ENEMIES = 30;
+        const MAX_ENEMIES = 50;
         const ENEMY_SPEED = 2;
         const ENEMY_ACCELERATION = 0.05;
         const SAFE_SPAWN_DISTANCE = 150;
@@ -112,8 +112,16 @@
             ctx.lineTo(-player.radius, -player.radius / 2);
             ctx.lineTo(-player.radius, player.radius / 2);
             ctx.closePath();
+
+            // Fill the player shape
             ctx.fillStyle = 'white';
             ctx.fill();
+
+            // Add a black stroke outline
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+
             ctx.restore();
         }
 
@@ -159,7 +167,7 @@
                 speed: speed || (isBoss ? ENEMY_SPEED * 0.5 : ENEMY_SPEED),
                 canSplit: canSplit,
                 // colors
-                color: isBoss ? 'Black' : (canSplit ? 'Red' : 'Black'),
+                color: isBoss ? 'black' : (canSplit ? 'red' : 'pink'),
                 isBoss: isBoss,
                 health: isBoss ? 15 : 1
             };
@@ -195,20 +203,25 @@
                 if (enemy.y > canvas.height) enemy.y = 0;
                 if (enemy.y < 0) enemy.y = canvas.height;
 
+                // Draw the enemy
                 ctx.beginPath();
                 ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
                 ctx.fillStyle = enemy.color;
                 ctx.fill();
 
+                // Add a black stroke outline
+                ctx.lineWidth = 0;
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+
                 if (enemy.isBoss) {
-                    ctx.fillStyle = 'white';
+                    ctx.fillStyle = 'black';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText(enemy.health, enemy.x, enemy.y + 5);
                 }
             });
         }
-
         function createExplosion(x, y, isSmall = false, isBoss = false) {
             const baseRadius = isSmall ? 30 : (isBoss ? 60 : 40);
             const particleCount = isSmall ? 30 : (isBoss ? 100 : 50);
@@ -308,19 +321,19 @@
                             if (enemy.health <= 0) {
                                 createExplosion(enemy.x, enemy.y, false, true);
                                 enemies.splice(enemyIndex, 1);
-                                score += 10;
-                                for (let i = 0; i < 20; i++) {
+                                score += 100;
+                                for (let i = 0; i < 35; i++) {
                                     const angle = (i / 10) * Math.PI * 2;
                                     const newEnemy = createEnemy(
                                         enemy.x + Math.cos(angle) * 50,
                                         enemy.y + Math.sin(angle) * 50,
-                                        5,
-                                        ENEMY_SPEED * 1.5,
-                                        false
+                                        15,
+                                        ENEMY_SPEED * 1.00,
+                                        true
                                     );
                                     // color
                                     if (newEnemy) {
-                                        newEnemy.color = '#FAF0E6';
+                                        newEnemy.color = 'red';
                                         enemies.push(newEnemy);
                                     }
                                 }
@@ -357,8 +370,9 @@
             });
         }
 
+        // spawnrate
         function updateSpawnInterval() {
-            spawnInterval = Math.max(100, 1000 * Math.exp(-score / 50));
+            spawnInterval = Math.max(100, 1000 * Math.exp(-score / 300));
             clearInterval(enemySpawnTimer);
             enemySpawnTimer = setInterval(() => {
                 if (!gameOver) {
@@ -389,9 +403,16 @@
         }
 
         function drawScore() {
-            ctx.fillStyle = 'white';
             ctx.font = '28px Arial';
             ctx.textAlign = 'center';
+
+            // Draw stroke first
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'black';
+            ctx.strokeText(`Score: ${score}`, canvas.width / 2, 40);
+
+            // Draw fill on top
+            ctx.fillStyle = 'white';
             ctx.fillText(`Score: ${score}`, canvas.width / 2, 40);
         }
 
