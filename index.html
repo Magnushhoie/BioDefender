@@ -46,6 +46,8 @@
         const ctx = canvas.getContext('2d');
         const deathMessage = document.getElementById('deathMessage');
         const backgroundMusic = document.getElementById('backgroundMusic');
+        backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+
         const explosionSound = document.getElementById('explosionSound');
 
         const backgroundImage = new Image();
@@ -167,7 +169,7 @@
                 speed: speed || (isBoss ? ENEMY_SPEED * 0.5 : ENEMY_SPEED),
                 canSplit: canSplit,
                 // colors
-                color: isBoss ? 'black' : (canSplit ? 'red' : 'pink'),
+                color: isBoss ? 'white' : (canSplit ? 'red' : 'pink'),
                 isBoss: isBoss,
                 health: isBoss ? 15 : 1
             };
@@ -215,7 +217,7 @@
                 ctx.stroke();
 
                 if (enemy.isBoss) {
-                    ctx.fillStyle = 'black';
+                    ctx.fillStyle = 'white';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText(enemy.health, enemy.x, enemy.y + 5);
@@ -224,7 +226,7 @@
         }
         function createExplosion(x, y, isSmall = false, isBoss = false) {
             const baseRadius = isSmall ? 30 : (isBoss ? 60 : 40);
-            const particleCount = isSmall ? 30 : (isBoss ? 100 : 50);
+            const particleCount = isSmall ? 40 : (isBoss ? 120 : 60);
             // colors
             const color = isSmall ? 'Yellow' : (isBoss ? 'Purple' : 'orange');
 
