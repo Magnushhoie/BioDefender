@@ -8,23 +8,16 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/Magnushhoie/BioDefender](https://magnushhoie.github.io/BioDefender/">
+  <a href="https://github.com/Magnushhoie/BioDefender">
+    <img alt="Image Alt Text" src="https://github.com/Magnushhoie/BioDefender/blob/main/media/screen.jpg?raw=true" width="900" />
   </a>
-  <h1 align="center">
-<picture>
-  <img alt="Image Alt Text"  src="https://github.com/Magnushhoie/BioDefender/blob/main/media/screen.jpg?raw=true" width="900"/
-</picture>
-         ></h1>
+  <h1 align="center">Survive as the ultimate Bio Defender!</h1>
   <p align="center">
-    Survive as the ultimate Bio Defender! 
+    <a href="https://magnushhoie.github.io/BioDefender/">magnushhoie.github.io/BioDefender/</a>
   </p>
 </p>
 
-## Play at [https://magnushhoie.github.io/BioDefender/](https://magnushhoie.github.io/BioDefender/)
-
-
-
-HTML5 game written with Claude 3.5 Sonnet, background music by Suno.ai.
+Browser HTML5 game written with Claude 3.5 Sonnet, background music by Suno.ai.
 - Spacebar to shoot
 - Arrow keys to move
 - You die if an enemy ship touches you
